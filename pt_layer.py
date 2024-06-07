@@ -1,6 +1,6 @@
 import gpt as g
 
-from ad_features import parallel_transport
+from gpt_ad_features import parallel_transport
 
 rad = g.ad.reverse
 

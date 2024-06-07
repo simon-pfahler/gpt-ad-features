@@ -1,6 +1,6 @@
 import gpt as g
 
-from ad_features import pt_layer, dense_layer
+from gpt_ad_features import pt_layer, dense_layer
 
 rad = g.ad.reverse
 
