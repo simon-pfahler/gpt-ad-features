@@ -9,7 +9,8 @@ rad = g.ad.reverse
 rng = g.random("seed")
 
 # load a gauge field
-gauge_field_path = "/glurch/scratch/knd35666/ensembles/ens001/1200.config"
+config_name = "1200.config"
+gauge_field_path = "/glurch/scratch/knd35666/ensembles/ens001/" + config_name
 U = g.load(gauge_field_path)
 
 # get grid of the field
@@ -45,7 +46,7 @@ w = g.qcd.fermion.wilson_clover(U, fermion_p)
 # optimization parameters
 sample_size = 5
 iterations = 1000
-alpha = 1/8/8/8/8/16  # volume scaling factor
+alpha = 1/8/8/8/16  # volume scaling factor
 
 # training step
 def training_step(alpha):
@@ -82,7 +83,6 @@ plt.xlabel("iteration")
 plt.yscale("log")
 plt.ylabel("cost")
 plt.savefig("1h1l_ptc_training.png")
-plt.show()
 
 f = open("1h1l_ptc_scores.dat", "w")
 for k, score in enumerate(costs):
@@ -90,7 +90,10 @@ for k, score in enumerate(costs):
 f.close()
 
 # save weights
-g.save(f"weights/1h1l_ptc_{iterations}it", [e.value for e in layer2.weights_lattice])
+weights_lattice = [g.vspincolor(grid) for _ in ptc1.weights]
+for i in range(len(ptc1.weights)):
+    weights_lattice[i][:] = ptc1.weights[i].value
+g.save(f"weights/1h1l_ptc_{iterations}it", [e for e in weights_lattice])
 
 # get preconditioning matrix operator
 def network_matrix(dst, src):
