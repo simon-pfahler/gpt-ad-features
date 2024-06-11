@@ -90,7 +90,7 @@ for k, score in enumerate(costs):
 f.close()
 
 # save weights
-weights_lattice = [g.vspincolor(grid) for _ in ptc1.weights]
+weights_lattice = [g.mspin(grid) for _ in ptc1.weights]
 for i in range(len(ptc1.weights)):
     weights_lattice[i][:] = ptc1.weights[i].value
 g.save(f"weights/1h1l_ptc_{iterations}it", [e for e in weights_lattice])
