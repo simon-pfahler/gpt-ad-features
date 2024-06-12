@@ -144,15 +144,19 @@ plt.title("Smoother (1h4l PTC)")
 plt.xlabel("iteration")
 plt.yscale("log")
 plt.ylabel("cost")
-plt.savefig("1h4l_ptc_training.png")
+plt.savefig("1h4l_ptc_smoother_training.png")
 
-f = open("1h4l_ptc_scores.dat", "w")
+f = open("1h4l_ptc_smoother_scores.dat", "w")
 for k, score in enumerate(costs):
     f.write(f"{k} {score}\n")
 f.close()
 
 # save weights
-g.save(f"weights/1h1l_ptc_{iterations}it", [e.value for e in layer2.weights_lattice])
+weights_lattice = [[g.mspin(grid) for _ in layer.weights] for layer in smoother]
+for i, layer in enumerate(smoother):
+    for j, weight in enumerate(layer.weights):
+        weights_lattice[i][j][:] = weight.value
+g.save(f"weights/1h4l_ptc_smoother_{iterations}it", weights_lattice)
 
 # get preconditioning matrix operator
 def network_matrix(dst, src):

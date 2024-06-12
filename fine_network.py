@@ -93,7 +93,7 @@ f.close()
 weights_lattice = [g.mspin(grid) for _ in ptc1.weights]
 for i in range(len(ptc1.weights)):
     weights_lattice[i][:] = ptc1.weights[i].value
-g.save(f"weights/1h1l_ptc_{iterations}it", [e for e in weights_lattice])
+g.save(f"weights/1h1l_ptc_{iterations}it", weights_lattice)
 
 # get preconditioning matrix operator
 def network_matrix(dst, src):
