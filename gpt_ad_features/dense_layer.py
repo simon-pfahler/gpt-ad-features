@@ -14,15 +14,6 @@ class dense_layer:
         # create weights
         self.weights = [rad.node(g.tensor(self.ot_weights)) for _ in range(self.num_weights)]
         
-        # initialize weights
-        # the below sets weights at the start such that a standard
-        # PT+dense combination is an identity
-        # FIX THIS: only works for mspin for now
-        for weight in self.weights:
-            weight.value = g.mspin([[0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0]])
-        for i in range(0, self.num_weights, self.num_in):
-            self.weights[i].value += g.mspin([[1,0,0,0], [0,1,0,0], [0,0,1,0], [0,0,0,1]])
-
     def __call__(self, layer_input):
         assert len(layer_input) == self.num_in
 

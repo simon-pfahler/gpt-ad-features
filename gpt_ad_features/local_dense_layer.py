@@ -13,13 +13,6 @@ class local_dense_layer:
 
         # create weights
         self.weights = [rad.node(g.lattice(self.grid, self.ot_weights)) for _ in range(self.num_weights)]
-        # initialize weights
-        # the below sets weights at the start such that a standard
-        # PT+local dense combination is an identity
-        for weight in self.weights:
-            weight.value[:] = 0
-        for i in range(0, self.num_weights, self.num_in):
-            self.weights[i].value += g.identity(self.weights[i].value)
     
     def __call__(self, layer_input):
         assert len(layer_input) == self.num_in

@@ -32,6 +32,10 @@ ptc1 = ptc_layer(grid,
 def network(network_input):
     return ptc1(network_input)
 
+# initialize the weights
+for weight in ptc1.weights:
+    weight.value = rng.normal(weight.value)
+
 # wilson clover operator
 fermion_p = {"csw_r": 1.0,
              "csw_t": 1.0,
@@ -45,8 +49,8 @@ w = g.qcd.fermion.wilson_clover(U, fermion_p)
 
 # optimization parameters
 sample_size = 5
-iterations = 1000
-alpha = 1/8/8/8/16  # volume scaling factor
+iterations = 10000
+alpha = 1
 
 # training step
 def training_step(alpha):
@@ -60,6 +64,8 @@ def training_step(alpha):
     cost = rad.node(0)
     for sample in range(sample_size):
         cost += 1/sample_size * g.norm2(network([training_inputs[sample],])[0] - training_outputs[sample])
+
+    cost /= 8*8*8*16  # volume scaling factor
 
     cost_val = cost()
 
