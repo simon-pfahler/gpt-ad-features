@@ -103,7 +103,7 @@ g.save(f"weights/1h1l_ptc_{iterations}it", weights_lattice)
 
 # get preconditioning matrix operator
 def network_matrix(dst, src):
-    dst @= network([src,])[0](with_gradients=False)
+    dst @= network(src)(with_gradients=False)
 
 prec = g.matrix_operator(lambda d, s: network_matrix(d, s))
 

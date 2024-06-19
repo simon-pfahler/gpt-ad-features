@@ -125,7 +125,7 @@ g.save(f"weights/1h1l_coarse_lptc_{iterations}it", [e.value for e in lptc1.weigh
 
 # get preconditioning matrix operator
 def network_matrix(dst, src):
-    dst @= block_map.promote(network([block_map.project(src),])[0](with_gradients=False))
+    dst @= block_map.promote(network(block_map.project(src))(with_gradients=False))
 
 prec = g.matrix_operator(lambda d, s: network_matrix(d, s))
 
