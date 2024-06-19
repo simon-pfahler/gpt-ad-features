@@ -35,8 +35,6 @@ def network(network_input):
 # initialize the weights
 for weight in ptc1.weights:
     weight.value = rng.normal(weight.value)
-    #weight.value = rng.normal(weight.value, sigma=0.01)
-#ptc1.weights[0].value += g.mspin([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
 
 # wilson clover operator
 fermion_p = {"csw_r": 1.0,
@@ -51,7 +49,7 @@ w = g.qcd.fermion.wilson_clover(U, fermion_p)
 
 # optimization parameters
 sample_size = 5
-tolerance = 1e-8
+tolerance = 1e-9
 iterations = 10000
 
 # function to calculate cost and gradient
