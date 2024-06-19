@@ -63,20 +63,27 @@ lptc1 = lptc_layer(cgrid,
 
 # define the network
 def network(network_input):
-    return lptc1(network_input)
+    return lptc1([network_input,])[0]
+
+# initialize the weights
+for weight in lptc1.weights:
+    weight.value = rng.normal(weight.value)
 
 # optimization parameters
 sample_size = 5
 iterations = 1000
-alpha = 1
+tolerance = 1e-8
 
 # example (coarse) source vector
 src = g.vspincolor(grid)
 src[:] = 1
 csrc = block_map.project(src)
 
-# training step
-def training_step(alpha):
+# function to calculate cost and gradient
+def cost_and_grad(weights):
+    # set correct weights
+    lptc1.weights = weights
+
     source = rng.normal([csrc for _ in range(sample_size)])
     normalizations = [g.norm2(se) for se in source]
 
@@ -86,25 +93,22 @@ def training_step(alpha):
     # define cost
     cost = rad.node(0)
     for sample in range(sample_size):
-        cost += 1/sample_size * g.norm2(network([training_inputs[sample],])[0] - training_outputs[sample])
+        cost += 1/sample_size * g.norm2(network(training_inputs[sample]) - training_outputs[sample])
 
-    cost_val = cost()
+    cost /= 8*8*8*16
 
-    # update weights (this is simple gradient descent so far)
-    for weight in lptc1.weights:
-        weight.value -= alpha * weight.gradient
+    cost_val = cost().real
 
     return cost_val
 
-costs = list()
-for k in range(iterations):
-    cc = training_step(alpha).real
-    costs.append(cc)
-    print(f"{k}: {cc}")
+# define optimizer
+opt = adam(lptc1.weights, cost_and_grad, alpha=1e-2)
+
+_, (costs, _, _) = opt.optimize(tol=tolerance, maxiter=iterations, logging=True)
 
 import matplotlib.pyplot as plt
 
-plt.plot(range(iterations), [c.real for c in costs])
+plt.plot(range(len(costs)), costs)
 plt.title("1h1l coarse LPTC")
 plt.xlabel("iteration")
 plt.yscale("log")
