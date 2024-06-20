@@ -35,7 +35,7 @@ block_vectors = g.load(f"multigrid_setup/{config_name}")
 block_map = g.block.map(cgrid, block_vectors)
 
 # identity "gauge field" on coarse grid
-I = [g.identity(g.mcomplex(cgrid, 24)) for _ in range(4)]
+I = [g.identity(g.mcomplex(cgrid, 12)) for _ in range(4)]
 
 # wilson clover operator on fine and coarse grid
 fermion_p = {"csw_r": 1.0,
@@ -71,8 +71,8 @@ for weight in lptc1.weights:
 
 # optimization parameters
 sample_size = 5
-iterations = 1000
-tolerance = 1e-8
+iterations = 10000
+tolerance = 1e-9
 
 # example (coarse) source vector
 src = g.vspincolor(grid)
@@ -115,33 +115,34 @@ plt.yscale("log")
 plt.ylabel("cost")
 plt.savefig("1h1l_coarse_lptc_training.png")
 
-f = open("1h1l_ptc_scores.dat", "w")
+f = open("1h1l_coarse_lptc_scores.dat", "w")
 for k, score in enumerate(costs):
     f.write(f"{k} {score}\n")
 f.close()
 
 # save weights
-g.save(f"weights/1h1l_coarse_lptc_{iterations}it", [e.value for e in lptc1.weights])
+g.save(f"weights/1h1l_coarse_lptc", [e.value for e in lptc1.weights])
 
 # get preconditioning matrix operator
 def network_matrix(dst, src):
-    dst @= block_map.promote(network(block_map.project(src))(with_gradients=False))
+    dst @= network(src)(with_gradients=False)
 
 prec = g.matrix_operator(lambda d, s: network_matrix(d, s))
 
-# get iteration count gain
+# example (coarse) source vector
 src = g.vspincolor(grid)
-src[:] = g.vspincolor([[1,1,1], [1,1,1], [1,1,1], [1,1,1]])
-src @= src / g.norm2(src)**0.5
+src[:] = 1
+csrc = block_map.project(src)
+csrc @= csrc / g.norm2(csrc)**0.5
 
 slv = inv.fgmres({"eps": 1e-6, "maxiter": 1000, "restartlen": 30})
-sol = slv(w)(src)
+sol = slv(cw)(csrc)
 it = len(slv.history)
 print(f"Unpreconditioned: {it}")
 print(f"{slv.history[0]} - {slv.history[-1]}")
 
 slv_prec = inv.fgmres({"eps": 1e-6, "maxiter": 1000, "restartlen": 30, "prec": lambda x: prec})
-sol_prec = slv_prec(w)(src)
+sol_prec = slv_prec(cw)(csrc)
 it_prec = len(slv_prec.history)
 print(f"Preconditioned: {it_prec}")
 print(f"{slv_prec.history[0]} - {slv_prec.history[-1]}")

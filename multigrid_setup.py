@@ -34,13 +34,13 @@ w = g.qcd.fermion.wilson_clover(U, fermion_p)
 
 # define transitions between grids
 def find_near_null_vectors(w, cgrid):
-    slv = inv.fgmres({"eps": 1e-3, "maxiter": 50, "restartlen": 25, "checkres": False})
+    slv = inv.fgmres({"eps": 1e-8, "maxiter": 1000, "restartlen": 25, "checkres": False})
     basis = g.orthonormalize(rng.cnormal([w.vector_space[0].lattice() for _ in range(12)]))
     null = g.lattice(basis[0])
     null[:] = 0
     for b in basis:
         slv(w)(b, null)
-    g.qcd.fermion.coarse.split_chiral(basis)
+    #g.qcd.fermion.coarse.split_chiral(basis)
     bm = g.block.map(cgrid, basis)
     bm.orthonormalize()
     return basis

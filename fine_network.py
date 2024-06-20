@@ -49,7 +49,7 @@ w = g.qcd.fermion.wilson_clover(U, fermion_p)
 
 # optimization parameters
 sample_size = 5
-tolerance = 1e-9
+tolerance = 1e-8
 iterations = 10000
 
 # function to calculate cost and gradient
