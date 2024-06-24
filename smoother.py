@@ -20,7 +20,7 @@ gauge_field_path = "/glurch/scratch/knd35666/ensembles/ens001/" + config_name
 U = g.load(gauge_field_path)
 
 # load weights
-fine_weights = g.load("weights/1h1l_ptc_1000it")
+fine_weights = g.load("weights/1h1l_ptc")
 
 # get grid and coarse grid
 grid = U[0].grid
@@ -89,7 +89,13 @@ def network(network_input):
     res = network_input
     for layer in smoother:
         res = layer(res)
-    return res
+    return res[0]
+
+# initialize the weights
+for layer in smoother:
+    for weight in layer.weights:
+        weight.value = rng.normal(weight.value, sigma=0.01)
+    layer.weights[0].value += g.mspin([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
 
 # define u_k+1 in iterative relaxation approach
 def next_uk(uk, Mh, D, b):
@@ -101,15 +107,24 @@ def next_uk(uk, Mh, D, b):
 
 # optimization parameters
 sample_size = 5
-iterations = 1000
-alpha = 1/8/8/8/16  # volume scaling factor
+tolerance = 1e-12
+iterations = 10000
 
 # example null vector
 null = g.vspincolor(grid)
 null[:] = 0
 
-# define training step
-def training_step(alpha):
+# function to calculate cost and gradient
+def cost_and_grad(weights):
+    # set correct weights
+    for i in range(len(weights)):
+        layer_index = 0
+        index_sum = 0
+        while i >= index_sum + len(smoother[layer_index].weights):
+            index_sum += len(smoother[layer_index].weights)
+            layer_index += 1
+        smoother[layer_index].weights[i - index_sum] = weights[i]
+
     source = rng.normal([g.vspincolor(grid) for _ in range(sample_size)])
     normalizations = [g.norm2(se) for se in source]
     source = [g(se / norm**0.5) for se, norm in zip(source, normalizations)]
@@ -120,26 +135,26 @@ def training_step(alpha):
     # define cost
     cost = rad.node(0)
     for sample in range(sample_size):
-        cost += 1/sample_size * g.norm2(network(training_inputs[sample])[0] - training_outputs[sample])
+        cost += 1/sample_size * g.norm2(network(training_inputs[sample]) - training_outputs[sample])
 
-    cost_val = cost()
+    cost /= 8*8*8*16
 
-    # update weights (this is simple gradient descent so far)
-    for layer in smoother:
-        for weight in layer.weights:
-            weight.value -= alpha * weight.gradient
+    cost_val = cost().real
 
     return cost_val
 
-costs = list()
-for k in range(iterations):
-    cc = training_step(alpha).real
-    costs.append(cc)
-    print(f"{k}: {cc}")
+weight_list = list()
+for layer in smoother:
+    weight_list.extend(layer.weights)
+
+# define optimizer
+opt = adam(weight_list, cost_and_grad, alpha=1e-3)
+
+_, (costs, _, _) = opt.optimize(tol=tolerance, maxiter=iterations, logging=True)
 
 import matplotlib.pyplot as plt
 
-plt.plot(range(iterations), [c.real for c in costs])
+plt.plot(range(len(costs)), costs)
 plt.title("Smoother (1h4l PTC)")
 plt.xlabel("iteration")
 plt.yscale("log")
@@ -156,11 +171,11 @@ weights_lattice = [[g.mspin(grid) for _ in layer.weights] for layer in smoother]
 for i, layer in enumerate(smoother):
     for j, weight in enumerate(layer.weights):
         weights_lattice[i][j][:] = weight.value
-g.save(f"weights/1h4l_ptc_smoother_{iterations}it", weights_lattice)
+g.save(f"weights/1h4l_ptc_smoother", weights_lattice)
 
 # get preconditioning matrix operator
 def network_matrix(dst, src):
-    dst @= network([src, null])[0](with_gradients=False)
+    dst @= network([src, null])(with_gradients=False)
 
 prec = g.matrix_operator(lambda d, s: network_matrix(d, s))
 
